@@ -8,11 +8,10 @@ import java.beans.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public final class AnnotationUtils {
     private static Logger logger = LoggerFactory.getLogger(AnnotationUtils.class);
@@ -85,6 +84,8 @@ public final class AnnotationUtils {
 
         final List<AnnotationInstance> effectiveAnnotations = new LinkedList<>();
 
+        final Map<String, Object> defaultValues = annotationDefaultValues(annotationClass);
+
         for (AnnotationInstance annotation : annotations) {
             switch (annotation.target().kind()) {
                 case METHOD:
@@ -105,14 +106,88 @@ public final class AnnotationUtils {
             }
         }
 
-        final A ai = effectiveAnnotations.isEmpty() ? null : mergeJoinColumns(annotationClass, effectiveAnnotations);
+        final List<A> ea = effectiveAnnotations.stream().map( a -> {
+            final Map<String, Object> values = new HashMap<>(defaultValues);
+
+            a.values().forEach( av -> {
+                switch (av.kind()) {
+                    case ENUM:
+                        final DotName enumClassName = av.asEnumType();
+                        try {
+                            final Class enumClass = Class.forName(enumClassName.toString());
+                            final Object o = Enum.valueOf(enumClass, av.asEnum());
+                            values.put(av.name(), o);
+                        } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                        break;
+
+                    default:
+                        values.put(av.name(), av.value());
+                }
+            });
+
+            return RuntimeAnnotations.annotationForMap(annotationClass, values);
+        }).collect(Collectors.toList());
+
+        final A ai = effectiveAnnotations.isEmpty() ? null : mergeAnnotations(annotationClass, ea);
         return ai;
     }
 
+    /**
+     * Compares two maps and returns changes from the right map (that does not exist in the left one).
+     */
+    protected static Map<String, Object> detectChanges(Map<String,Object> left, Map<String,Object> right) {
+        final Map<String, Object> changes = new HashMap<>();
+        for (var e : right.entrySet()) {
+            final String k = e.getKey();
+            final Object rv = e.getValue();
+            Object ev = left.get(k);
 
-    public static <A extends Annotation> A mergeJoinColumns(Class<A> annotationClass, Iterable<AnnotationInstance> annotationInstances) {
+            if (rv instanceof Map rm) {
+                if (ev instanceof Annotation a) {
+                    ev = annotationValues(a);
+                }
+                final Map<String, Object> vv = detectChanges((Map)ev, rm);
 
-        final Map<String, Object> effectiveValues = new HashMap<>();
+                if (!vv.isEmpty()) {
+                    changes.put(k, vv);
+                }
+            } else if (ev != rv && !ev.equals(rv)) {
+                changes.put(k, rv);
+            }
+        }
+        return changes;
+    }
+
+    /**
+     * Retrieves all annotation values.
+     */
+    public  static <A extends Annotation> Map<String, Object> annotationValues(A annotation) {
+        final Map<String, Object> values = new HashMap<>();
+
+        final  Method methods[] =  annotation.annotationType().getDeclaredMethods();
+        for (Method m : methods) {
+            try {
+                Object v = null;
+                v = m.invoke(annotation, (Object[]) null);
+                if ( v instanceof Annotation a) {
+                    v = annotationValues(a);
+                }
+                values.put(m.getName(), v);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return values;
+    }
+
+    /**
+     * Retrieves default annotation values for annotation specified by a given class.
+     */
+    public static <A extends Annotation> Map<String, Object> annotationDefaultValues(Class<A> annotationClass) {
+        final Map<String, Object> values = new HashMap<>();
 
         // -- populate map with default values
         final BeanInfo bi;
@@ -128,32 +203,51 @@ public final class AnnotationUtils {
 
         for (MethodDescriptor md: mds) {
             final Object dv = md.getMethod().getDefaultValue();
-            effectiveValues.put(md.getName(), dv);
+            values.put(md.getName(), dv);
         }
 
-        // -- populate map with values given from annotations
-        for (AnnotationInstance ai: annotationInstances) {
-            for (AnnotationValue av: ai.values()) {
-                switch (av.kind()) {
-                    case ENUM:
-                        final DotName enumClassName = av.asEnumType();
-                        try {
-                            final Class enumClass = Class.forName(enumClassName.toString());
-                            final Object o = Enum.valueOf(enumClass, av.asEnum());
-                            effectiveValues.put(av.name(), o);
-
-                        } catch (ClassNotFoundException e) {
-                            throw new RuntimeException(e);
-                        }
-                        break;
-
-                    default:
-                        effectiveValues.put(av.name(), av.value());
-                }
-
-            }
-        }
-
-        return RuntimeAnnotations.annotationForMap(annotationClass, effectiveValues);
+        return values;
     }
+
+    /**
+     * Merge a bunch of annotations into the effective one with the respect of default values. That means that:
+     *
+     * public @interface A {
+     *     String name() default "";
+     *     boolean nullable() default true;
+     *     boolean insertable() default true;
+     * }
+     *
+     * @A(name="1st"), @A(nullable=false), @A(name="2nd")
+     *
+     * effective will be @A(name=''2nd', nullable=false, insertable=true)
+     */
+    public static <A extends Annotation> A mergeAnnotations(Class<A> annotationClass, Iterable<A> annotations) {
+        if (!annotations.iterator().hasNext()) {
+            return null;
+        }
+
+        try {
+            final Map<String, Object> defaultValues = annotationDefaultValues(annotationClass);
+            final Map<String, Object> effectiveValues = new HashMap<>(defaultValues);
+
+            for (A a : annotations) {
+                final Map<String, Object> v = annotationValues(a);
+                final Map<String, Object> changes = detectChanges(defaultValues, v);
+                effectiveValues.putAll(changes);
+            }
+
+            if (!effectiveValues.isEmpty()) {
+                return RuntimeAnnotations.annotationForMap(annotationClass, effectiveValues);
+            } else {
+                return null;
+            }
+        } catch (Throwable t) {
+            if (t instanceof RuntimeException rte) {
+                throw rte;
+            }
+            throw new RuntimeException(t);
+        }
+    }
+
 }

@@ -3,14 +3,7 @@ package org.srg.smartclient;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import org.javers.core.Javers;
-import org.javers.core.JaversBuilder;
-import org.javers.core.changelog.AbstractTextChangeLog;
-import org.javers.core.diff.Diff;
-import org.javers.core.diff.changetype.PropertyChange;
-import org.javers.core.diff.changetype.ValueChange;
-import org.javers.core.diff.changetype.map.*;
-import org.srg.smartclient.utils.RuntimeAnnotations;
+import org.srg.smartclient.utils.AnnotationUtils;
 
 import javax.persistence.*;
 import javax.persistence.metamodel.*;
@@ -184,7 +177,7 @@ public record JpaRelation<S, T>(
             }
         }
 
-        final JoinColumn effectiveJoinColumn = mergeAnnotations(JoinColumn.class, DEFAULT_JOIN_COLUMN, allJoinColumns);
+        final JoinColumn effectiveJoinColumn = AnnotationUtils.mergeAnnotations(JoinColumn.class, allJoinColumns);
 
 //        List<JoinColumn> mappedByJoinColumns = mappedByField == null ? Collections.EMPTY_LIST : determineJoinColumns(mappedByField);
 //
@@ -352,93 +345,6 @@ public record JpaRelation<S, T>(
         return joinColumns;
     }
 
-    @JoinColumn
-    private static JoinColumn getDefaultJoinColumn() {
-        try {
-            final Method m = JpaRelation.class.getDeclaredMethod("getDefaultJoinColumn");
-            return m.getAnnotation(JoinColumn.class);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-
-        throw new IllegalStateException();
-    }
-
-    @JoinTable
-    private static JoinTable getDefaultJoinTable() {
-        try {
-            final Method m = JpaRelation.class.getDeclaredMethod("getDefaultJoinTable");
-            return m.getAnnotation(JoinTable.class);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-
-        throw new IllegalStateException();
-    }
-
-    private static final JoinColumn DEFAULT_JOIN_COLUMN = getDefaultJoinColumn();
-    private static final JoinTable DEFAULT_JOIN_TABLE = getDefaultJoinTable();
-
-    private static <A extends Annotation> A mergeAnnotations(Class<A> clazz, A defaultAnnotation, Iterable<A> annotations) {
-        final Javers javers = JaversBuilder.javers()
-//                .withObjectAccessHook(new ObjectAccessHook() {
-//                    @Override
-//                    public Optional<ObjectAccessProxy> createAccessor(Object entity) {
-//                        if (Proxy.isProxyClass(entity.getClass())) {
-////                            sun.reflect.annotation.AnnotationInvocationHandler
-//                            //((InvocationHandler)Proxy.getInvocationHandler(entity)).getOriginalObject();
-////                            AnnotationInvocationHandler
-//                            Optional.of(new ObjectAccessProxy(){
-//
-//                            });
-//                        }
-//                        return Optional.empty();
-//                    }
-//                })
-                .build();
-
-        final Map<String, Object> res = new HashMap<>();
-
-        for (A ja : annotations) {
-            final Diff diff = javers.compare(defaultAnnotation, ja);
-
-            if (diff.hasChanges()) {
-                javers.processChangeList(diff.getChanges(), new AbstractTextChangeLog() {
-                    @Override
-                    public void onMapChange(MapChange mapChange) {
-                        for (EntryChange ec : mapChange.getEntryChanges()) {
-                            final String key = (String) ec.getKey();
-                            if (ec instanceof EntryValueChange evc) {
-                                res.put(key, evc.getRightValue());
-                            } else if (ec instanceof EntryAdded eac) {
-                                res.put(key, eac.getValue());
-                            } else if (ec instanceof EntryRemoved erc) {
-//                                res.put(key, eac.getValue());
-                            }
-                        }
-                    }
-
-                    @Override
-                    public void onPropertyChange(PropertyChange propertyChange) {
-                        super.onPropertyChange(propertyChange);
-                    }
-
-                    @Override
-                    public void onValueChange(ValueChange valueChange) {
-                        super.onValueChange(valueChange);
-                    }
-                });
-            }
-        }
-
-
-        if (!res.isEmpty()) {
-            return (A) createAnnotationAtRuntime(clazz, res);
-        } else {
-            return null;
-        }
-    }
-
     private static <A extends Annotation> A getAnnotation(Class<A> clazz, EntityType<?> entityType ) {
         final Class c = entityType.getJavaType();
         return (A) c.getAnnotation(clazz);
@@ -447,11 +353,6 @@ public record JpaRelation<S, T>(
     private static <A extends Annotation> A getAnnotation(Class<A> clazz, Attribute<?, ?> sourceAttribute) {
         final Field f = (Field) sourceAttribute.getJavaMember();
         return f.getAnnotation(clazz);
-    }
-
-
-    private static <T extends Annotation> T createAnnotationAtRuntime(Class<T> clazz, Map<String, Object> values) {
-        return RuntimeAnnotations.annotationForMap(clazz, values);
     }
 
     public static <E> Set<SingularAttribute<? super E,?>> getIdAttributes(EntityType<E> et) {
