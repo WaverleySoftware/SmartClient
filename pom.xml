@@ -9,7 +9,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.sdk.version>14</java.sdk.version>
+		<java.sdk.version>16</java.sdk.version>
 		<java.compiler.compilerVersion>${java.sdk.version}</java.compiler.compilerVersion>
 		<java.compiler.source>${java.sdk.version}</java.compiler.source>
 		<java.compiler.target>${java.sdk.version}</java.compiler.target>
@@ -156,7 +156,6 @@
 					<configuration>
 						<release>${java.sdk.version}</release>
 						<compilerArgs>
-							<arg>--enable-preview</arg>
 							<arg>-Xlint:all</arg>
 						</compilerArgs>
 						<forceJavacCompilerUse>true</forceJavacCompilerUse>
@@ -167,7 +166,10 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>3.0.0-M4</version>
 					<configuration>
-						<argLine>--enable-preview</argLine>
+						<argLine>
+							--add-opens java.base/java.lang=ALL-UNNAMED
+							--add-opens java.base/sun.reflect.annotation=ALL-UNNAMED
+						</argLine>
 					</configuration>
 				</plugin>
 				<plugin>
