@@ -43,6 +43,7 @@ public abstract class AbstractJDBCHandlerTest<H extends JDBCHandler> extends Abs
                 [
                     {
                         name:"client"
+                        ,type: "INTEGER"
                         ,foreignKey:"ClientDS.id"
                         ,displayField:"clientName"
                         ,foreignDisplayField:"name"

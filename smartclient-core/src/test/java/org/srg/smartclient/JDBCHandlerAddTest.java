@@ -2,7 +2,6 @@ package org.srg.smartclient;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.srg.smartclient.isomorphic.DSRequest;
@@ -27,9 +26,6 @@ public class JDBCHandlerAddTest extends AbstractJDBCHandlerTest<JDBCHandler> {
                  useStrictJSON : true,
                  dataSource : "EmployeeDS",
                  operationType : "ADD",
-                 componentId : "isc_ListGrid_5",
-                 startRow : 0,
-                 endRow : 0,
                  textMatchStyle : "EXACT",
                  data : {
                    name: "A new Record"
@@ -60,33 +56,66 @@ public class JDBCHandlerAddTest extends AbstractJDBCHandlerTest<JDBCHandler> {
                  {
                      status: 0,
                      data:[
-                        {
-                             id:1,
-                             name: 'admin'
-                         },
-                         {
-                             id:2,
-                             name: 'developer'
-                         },
-                         {
-                             id:3,
-                             name: 'UseR3'
-                         },
-                                                 {
-                             id:4,
-                             name: 'manager1'
-                         },
-                                                 {
-                             id:5,
-                             name: 'manager2'
-                         },
-                         {
-                             id:6,
-                             name: 'user2'
-                         },
                          {
                              id:7,
                              name: 'A new Record'
+                         }
+                     ]
+                }""", response);
+    }
+
+    @Test
+    public void addingWithMultipleJoin() throws Exception {
+
+        handler =  withHandlers(Handler.Client, Handler.Project);
+        withExtraFields(handler, ExtraField.Project_IncludeFromClient);
+
+        final DSRequest request = JsonTestSupport.fromJSON(new TypeReference<>(){}, """
+
+                   {
+                        useStrictJSON : true,
+                        operationType : "ADD",
+                        textMatchStyle : "EXACT",
+                        dataSource: 'ProjectDS',
+                        data:
+                             {
+                                id: "6",
+                                name:"New Project",
+                                client: 1,
+                                clientName: "client 1"
+                             },
+                        oldValues : null
+
+                   }
+                """);
+
+        final DSResponse response;
+
+        try {
+            response = handler.handleAdd(request);
+        } catch (ContextualRuntimeException e) {
+            /*
+             * This exception handler can be used  to check and adjust
+             * ContextualRuntimeException.dumpContext_ifAny().
+             *
+             * Other than that it does not have any sense
+             */
+            final StringWriter sw = new StringWriter();
+            final ObjectMapper mapper = Serde.createMapper();
+
+            e.dumpContext_ifAny(sw, "  ", mapper.writerWithDefaultPrettyPrinter());
+            System.out.println( sw.toString());
+            throw new RuntimeException(e);
+        }
+        JsonTestSupport.assertJsonEquals("""
+                 {
+                     status: 0,
+                     data:[
+                         {
+                             id:6,
+                             name:"New Project",
+                             client: 1,
+                             clientName: "client 1"
                          }
                      ]
                 }""", response);

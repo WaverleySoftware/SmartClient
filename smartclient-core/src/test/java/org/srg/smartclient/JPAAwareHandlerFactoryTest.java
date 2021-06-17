@@ -97,7 +97,7 @@ public class JPAAwareHandlerFactoryTest {
 				primaryKey:false,
 				hidden:true,
 				type:'ENTITY',
-				foreignKey:'ProjectDS.id',
+				foreignKey:'ProjectDS.client',
 				foreignDisplayField:null,
 				dbName:'projects',
 				multiple:true

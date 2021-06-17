@@ -4,12 +4,12 @@
 
 	<groupId>org.srg.smartclient-dsi</groupId>
 	<artifactId>smartclient-parent</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0</version>
 	<packaging>pom</packaging>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.sdk.version>15</java.sdk.version>
+		<java.sdk.version>14</java.sdk.version>
 		<java.compiler.compilerVersion>${java.sdk.version}</java.compiler.compilerVersion>
 		<java.compiler.source>${java.sdk.version}</java.compiler.source>
 		<java.compiler.target>${java.sdk.version}</java.compiler.target>
