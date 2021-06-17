@@ -28,12 +28,16 @@ public class SQLAddContext<H extends JDBCHandler> extends JDBCHandler.AbstractSQ
                 DSRequest.TextMatchStyle.EXACT,
                 request().getData(),
                 exclusionPredicate
-        );
+        ).stream().filter(it -> {
+            assert it instanceof JDBCHandler.FilterData;
+            return ((JDBCHandler.FilterData) it).getDsFieldPair().field().isPrimaryKey()
+                    || ((JDBCHandler.FilterData) it).getDsFieldPair().dataSource().equals(this.dsHandler().dataSource());
+        }).collect(Collectors.toList());
 
         final String insertSQL = filterData.stream()
                 .map(fd -> {
                     assert fd instanceof JDBCHandler.FilterData;
-                    return ((JDBCHandler.FilterData) fd).getDsFieldPair().fieldName();
+                    return ((JDBCHandler.FilterData) fd).getDsFieldPair().getSqlFieldAlias();
                 })
                 .collect(Collectors.joining(", "));
         final String valuesSQL = filterData.stream()

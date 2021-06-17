@@ -150,14 +150,18 @@ public class JDBCHandler extends AbstractDSHandler {
         // --
         final DSResponse[] response = {null};
 
-        policy.withConnectionDo(this.getDataSource().getDbName(), conn-> {
+        final LinkedList<DSRequest.MapData> pks = new LinkedList<>();
 
-            try (PreparedStatement st = conn.prepareStatement(sqlAddContext.getAddSQL())) {
-                int idx =0;
+        policy.withConnectionDo(this.getDataSource().getDbName(), conn -> {
+
+            try (PreparedStatement st = conn.prepareStatement(sqlAddContext.getAddSQL(),
+                    Statement.RETURN_GENERATED_KEYS)) {
 
                 final List<IFilterData> l = sqlAddContext.getFilterData();
-                for (IFilterData fd: l) {
-                    idx = fd.setStatementParameters(idx, st);
+                if (l != null && !l.isEmpty()) {
+                    for (IFilterData fd : l) {
+                        fd.setStatementParameters(0, st);
+                    }
                 }
                 final int qnt = st.executeUpdate();
 
@@ -165,6 +169,24 @@ public class JDBCHandler extends AbstractDSHandler {
                 if (qnt == 0) {
                     // There is no added/affected records
                     throw new RuntimeException("Zero rows were added.");
+                }
+                try (ResultSet generatedKeys = st.getGeneratedKeys()) {
+                    while (generatedKeys.next()) {
+                        ResultSetMetaData metaData = generatedKeys.getMetaData();
+                        DSRequest.MapData map = new DSRequest.MapData();
+                        for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                            String dbName = metaData.getColumnName(i);
+
+                            Object key = generatedKeys.getObject(i);
+                            this.getDataSource().getFields().stream()
+                                    .filter(it -> it.getDbName().equals(dbName))
+                                    .findFirst()
+                                    .ifPresent(dsField -> { map.put(dsField.getName(), key); });
+                        }
+                        if (!map.isEmpty()) {
+                            pks.add(map);
+                        }
+                    }
                 }
             } catch (Throwable t) {
                 conn.rollback();
@@ -186,16 +208,33 @@ public class JDBCHandler extends AbstractDSHandler {
             fr.setOperationType(DSRequest.OperationType.FETCH);
             fr.setOperationId(request.getOperationId());
             fr.setComponentId(request.getComponentId());
+            fr.setTextMatchStyle(DSRequest.TextMatchStyle.EXACT);
 
-            final DSResponse r =  doHandleFetch(fr, conn, false);
+            List<DSResponse> responses = new LinkedList<>();
+            for (DSRequest.MapData data : pks) {
+                fr.setData(data);
+                final DSResponse r = doHandleFetch(fr, conn, false);
+                if (r.getStatus() == DSResponse.STATUS_SUCCESS) {
+                    responses.add(r);
+                } else {
+                    conn.rollback();
+                    return null;
+                }
 
-            if (r.getStatus() == DSResponse.STATUS_SUCCESS ) {
-                conn.commit();
-            } else {
-                conn.rollback();
             }
 
-            response[0] = r;
+            if (responses.isEmpty()) {
+                conn.rollback();
+                return null;
+            }
+
+            conn.commit();
+
+            Iterable<DSField> fields = responses.get(0).getData().getRawDataResponse().getFields();
+            List<Object[]> data = new LinkedList<>();
+            responses.forEach(it ->
+                    data.add(it.getData().getRawDataResponse().getData().iterator().next()));
+            response[0] = DSResponse.success(DSResponseDataContainer.createRaw(fields, data));
             return null;
         });
 

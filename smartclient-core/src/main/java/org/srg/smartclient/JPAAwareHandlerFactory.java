@@ -407,7 +407,9 @@ public class JPAAwareHandlerFactory extends JDBCHandlerFactory {
                         f.setHidden(true);
                     }
 
-                    final Set<DSField> dsIdFields =  getDSIDField(mm, foreignJavaType);
+                    Set<DSField> dsIdFields =  getDSIDField(mm, foreignJavaType);
+
+                    dsIdFields.addAll(getDSRelationField(mm, foreignJavaType, entityType.getJavaType()));
 
                     // --
                     if (jpaRelation.targetAttribute() == null) {
@@ -668,6 +670,26 @@ public class JPAAwareHandlerFactory extends JDBCHandlerFactory {
         }
 
         return idAttributes.stream()
+                .map(sa -> describeField(mm, "<>", et, sa))
+                .collect(Collectors.toSet());
+    }
+
+    protected  <E> Set<DSField> getDSRelationField( Metamodel mm, Class<E> clazz, Class<?> relationClazz) {
+        final EntityType<E> et = mm.entity(clazz);
+
+        Set<SingularAttribute<? super E, ?>> result = new HashSet<>();
+        Arrays.stream(clazz.getDeclaredFields()).forEach(field -> {
+            if (field.getType().equals(relationClazz)
+                    && (field.getAnnotation(OneToMany.class) != null || field.getAnnotation(ManyToOne.class) != null)) {
+                et.getDeclaredSingularAttributes().forEach(singularAttr -> {
+                    if (singularAttr.getType().getJavaType().equals(field.getType())) {
+                        result.add(singularAttr);
+                    }
+                });
+            }
+        });
+
+        return result.stream()
                 .map(sa -> describeField(mm, "<>", et, sa))
                 .collect(Collectors.toSet());
     }
