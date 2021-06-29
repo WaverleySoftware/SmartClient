@@ -250,6 +250,31 @@ public class JPAAwareHandlerFactoryTest {
 	}
 
 	@Test
+	public void smartClientFieldAnnotation_canEdit() {
+		final Metamodel mm = emf.getMetamodel();
+		final String dsId = "TestDS";
+
+		{
+			final EntityType<EmployeeStatus> employeeStatusEntityType = mm.entity(EmployeeStatus.class);
+			final Attribute<?, ?> employeeStatusAttribute = employeeStatusEntityType.getAttribute("status");
+
+			final DSField dsf = jpaAwareHandlerFactory.describeField(mm, dsId, employeeStatusEntityType, employeeStatusAttribute);
+
+			JsonTestSupport.assertJsonEquals("""
+      		{
+   				name:'status',
+			   	required:false,
+   				primaryKey:false,
+   				hidden:false,
+   				type:'TEXT',
+			    dbName:'status',
+			    canEdit: true
+      		}""", dsf, Option.IGNORING_EXTRA_FIELDS);
+
+		}
+	}
+
+	@Test
 	public void manyToMany() {
 		final Metamodel mm = emf.getMetamodel();
 		final String dsId = "TestDS";

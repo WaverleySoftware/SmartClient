@@ -26,4 +26,5 @@ public @interface SmartClientField {
      */
     DSField.SummaryFunctionType foreignDisplayFieldSummaryFunction() default DSField.SummaryFunctionType.CONCAT;
     DSField.FieldType type() default DSField.FieldType.ANY;
+    boolean canEdit() default false;
 }

@@ -146,6 +146,11 @@ public class JDBCHandlerFactory {
             if (!sfa.customSelectExpression().isBlank()) {
                 dsf.setCustomSelectExpression(sfa.customSelectExpression());
             }
+            if (sfa.canEdit()) {
+                dsf.setCanEdit(Boolean.TRUE);
+            } else {
+                dsf.setCanEdit(Boolean.FALSE);
+            }
         }
 
     }
