@@ -22,6 +22,7 @@ public class EmployeeStatus extends HistoricalEntity<Employee> {
         return super.getOwner();
     }
 
+    @SmartClientField(canEdit = true)
     public String getStatus() {
         return status;
     }
