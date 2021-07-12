@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 import org.srg.smartclient.isomorphic.DSField;
 import org.srg.smartclient.isomorphic.DataSource;
+import org.srg.smartclient.jpa.ClientData;
 import org.srg.smartclient.utils.Serde;
 
 import java.lang.reflect.Constructor;
@@ -19,6 +20,7 @@ public abstract class AbstractHandlerTest<H extends DSHandler> {
                 {
                   id: "CountryDS",
                   tableName: "countries",
+                  deletionType: 'DELETE',
                   fields: [
                     {
                       name: "id",
@@ -74,6 +76,7 @@ public abstract class AbstractHandlerTest<H extends DSHandler> {
                    id: 'EmployeeDS',
                    serverType: 'sql',
                    tableName: 'employee',
+                   deletionType: 'SOFT_DELETE',
                    fields: [
                        {
                            name: 'id',
@@ -140,6 +143,28 @@ public abstract class AbstractHandlerTest<H extends DSHandler> {
                         }
                     ]
                 }""";
+
+        public static String ClientData = """
+                {
+                    id: 'ClientDataDS',
+                    tableName: 'client_data',
+                    deletionType: 'DELETE',
+                    fields:[
+                        {
+                            name:"id"
+                            ,type:"INTEGER"
+                            ,primaryKey:true
+                            ,canEdit:false
+                            ,hidden:true
+                        },
+                        {
+                            name:"data"
+                            ,type:"TEXT"
+                            ,canEdit:false
+                        }
+                    ]
+                }
+                """;
 
         private Handler() {}
     }

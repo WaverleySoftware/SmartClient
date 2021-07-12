@@ -2,6 +2,7 @@ package org.srg.smartclient;
 
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
+import org.hibernate.annotations.SQLDelete;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.srg.smartclient.annotations.SmartClientField;
@@ -44,6 +45,17 @@ public class JDBCHandlerFactory {
         final SmartClientHandler a = entityClass.getAnnotation(SmartClientHandler.class);
         if (a != null && a.serverConstructor() != null && !a.serverConstructor().isBlank()) {
             ds.setServerConstructor(a.serverConstructor());
+        }
+
+        if (a != null && a.canDelete()) {
+            final SQLDelete b = entityClass.getAnnotation(SQLDelete.class);
+            if (b != null) {
+                ds.setDeletionType(DataSource.DeletionType.SOFT_DELETE);
+            } else {
+               ds.setDeletionType(DataSource.DeletionType.DELETE);
+            }
+        } else {
+            ds.setDeletionType(DataSource.DeletionType.NOT_AVAILABLE);
         }
 
         final List<Field> fields = FieldUtils.getAllFieldsList(entityClass);
