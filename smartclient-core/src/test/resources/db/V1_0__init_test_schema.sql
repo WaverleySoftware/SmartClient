@@ -35,6 +35,7 @@ CREATE TABLE employee (
     email           VARCHAR(50),
     location_id     INT,
     firedAt         TIMESTAMP(6),
+    deleted         BOOLEAN default false,
 
     CONSTRAINT pkEmployee
         PRIMARY KEY (id),
@@ -159,12 +160,12 @@ INSERT INTO locations VALUES (2, 1, 'Lviv');
 INSERT INTO locations VALUES (3, 2, 'USA');
 
 
-INSERT INTO employee VALUES (1, 'admin', 'admin@acmE.org', 1, '2000-01-02 03:04:05');
-INSERT INTO employee VALUES (2, 'developer', 'developer@acme.org', 2, null);
-INSERT INTO employee VALUES (3, 'UseR3', 'u3@emca.org', 3, null);
-INSERT INTO employee VALUES (6, 'user2', 'u2@emca.org', 3, null);
-INSERT INTO employee VALUES (4, 'manager1', 'pm1@acmE.org', 1, null);
-INSERT INTO employee VALUES (5, 'manager2', 'pm2@acme.org', 2, '2000-05-04 03:02:01');
+INSERT INTO employee VALUES (1, 'admin', 'admin@acmE.org', 1, '2000-01-02 03:04:05', false);
+INSERT INTO employee VALUES (2, 'developer', 'developer@acme.org', 2, null, false);
+INSERT INTO employee VALUES (3, 'UseR3', 'u3@emca.org', 3, null, false);
+INSERT INTO employee VALUES (6, 'user2', 'u2@emca.org', 3, null, false);
+INSERT INTO employee VALUES (4, 'manager1', 'pm1@acmE.org', 1, null, false);
+INSERT INTO employee VALUES (5, 'manager2', 'pm2@acme.org', 2, '2000-05-04 03:02:01', false);
 
 INSERT INTO employee_role VALUES (1, 'Admin');
 INSERT INTO employee_role VALUES (1, 'Developer');

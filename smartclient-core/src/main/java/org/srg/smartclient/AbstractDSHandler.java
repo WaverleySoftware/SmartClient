@@ -93,6 +93,10 @@ public abstract class AbstractDSHandler extends RelationSupport implements DSHan
         return failureDueToUnsupportedOperation(request);
     }
 
+    protected DSResponse handleRemove(DSRequest request) throws Exception {
+        return failureDueToUnsupportedOperation(request);
+    }
+
     @Override
     final public DSResponse handle(DSRequest request) throws Exception {
         if (!getDataSource().getId().equalsIgnoreCase(request.getDataSource())) {
@@ -109,6 +113,7 @@ public abstract class AbstractDSHandler extends RelationSupport implements DSHan
             case FETCH -> handleFetch(request);
             case UPDATE -> handleUpdate(request);
             case ADD -> handleAdd(request);
+            case REMOVE -> handleRemove(request);
             default -> failureDueToUnsupportedOperation(request);
         };
     }

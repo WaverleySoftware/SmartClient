@@ -3,7 +3,6 @@ package org.srg.smartclient.annotations;
 import org.srg.smartclient.isomorphic.DSField;
 
 import java.lang.annotation.*;
-import java.util.Optional;
 
 @Target({ ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

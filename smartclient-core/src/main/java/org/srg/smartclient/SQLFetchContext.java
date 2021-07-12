@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.srg.smartclient.isomorphic.DSField;
 import org.srg.smartclient.isomorphic.DSRequest;
+import org.srg.smartclient.isomorphic.DataSource;
 import org.srg.smartclient.isomorphic.OperationBinding;
 import org.srg.smartclient.isomorphic.criteria.AdvancedCriteria;
 import org.srg.smartclient.utils.ContextualRuntimeException;
@@ -479,11 +480,16 @@ public class SQLFetchContext<H extends JDBCHandler> extends JDBCHandler.Abstract
                         <#if effectiveAnsiJoinClause?has_content>
                             ${effectiveAnsiJoinClause}
                         </#if>
+                        %s
                     ) opaque                                                                                                              
                     <#if effectiveWhereClause?has_content>
                         WHERE ${effectiveWhereClause}
                     </#if>                                                                                                              
-                    """;
+                    """.formatted(
+                            (dataSource().getDeletionType().equals(DataSource.DeletionType.SOFT_DELETE)
+                                    ? "WHERE ${effectiveTableClause}.deleted = false"
+                                    : "")
+            );
 
             final String effectiveQuery = operationBinding() == null
                     || operationBinding().getCustomSQL() == null
