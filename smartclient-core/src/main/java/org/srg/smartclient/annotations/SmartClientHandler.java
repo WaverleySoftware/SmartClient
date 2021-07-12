@@ -9,4 +9,6 @@ public @interface SmartClientHandler {
     String value() default "";
     int loadOrder() default 0;
     String serverConstructor() default "";
+
+    boolean canDelete() default false;
 }

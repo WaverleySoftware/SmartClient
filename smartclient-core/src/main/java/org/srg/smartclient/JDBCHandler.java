@@ -157,10 +157,11 @@ public class JDBCHandler extends AbstractDSHandler {
             try (PreparedStatement st = conn.prepareStatement(sqlAddContext.getAddSQL(),
                     Statement.RETURN_GENERATED_KEYS)) {
 
+                int idx = 0;
                 final List<IFilterData> l = sqlAddContext.getFilterData();
                 if (l != null && !l.isEmpty()) {
                     for (IFilterData fd : l) {
-                        fd.setStatementParameters(0, st);
+                        idx = fd.setStatementParameters(idx, st);
                     }
                 }
                 final int qnt = st.executeUpdate();
@@ -246,6 +247,42 @@ public class JDBCHandler extends AbstractDSHandler {
 
         return DSResponse.success(fetchRespone.getData());
     }
+
+    @Override
+    protected DSResponse handleRemove(DSRequest request) throws Exception {
+        if (! (request.getData() instanceof Map)) {
+            throw new RuntimeException("Bad request: operation 'REMOVE', the map of modified and PK fields " +
+                    "must be provided in the  'data' field.");
+        }
+
+        final OperationBinding operationBinding = getEffectiveOperationBinding(DSRequest.OperationType.FETCH, request.getOperationId());
+        final SQLRemoveContext<JDBCHandler> sqlRemoveContext = new SQLRemoveContext<>(this, request, operationBinding);
+
+        policy.withConnectionDo(this.getDataSource().getDbName(), conn -> {
+
+            try (PreparedStatement st = conn.prepareStatement(sqlRemoveContext.getDeleteSQL())) {
+
+                int idx = 0;
+
+                final List<IFilterData> ll = sqlRemoveContext.getPkFieldData();
+                for (IFilterData fd: ll) {
+                    idx = fd.setStatementParameters(idx, st);
+                }
+
+                final int qnt = st.executeUpdate();
+
+                conn.commit();
+
+            } catch (Throwable t) {
+                conn.rollback();
+                throw new ContextualRuntimeException("SQL remove query execution failed.", t, sqlRemoveContext);
+            }
+            return null;
+        });
+
+        return DSResponse.success(null);
+    }
+
 
     private static class StickyDBDSRequest extends DSRequest {
         private final Connection connection;

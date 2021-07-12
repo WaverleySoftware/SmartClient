@@ -17,6 +17,12 @@ public class DataSource {
         JSON
     }
 
+    public enum DeletionType {
+        DELETE,
+        SOFT_DELETE,
+        NOT_AVAILABLE
+    }
+
     private String id;
     private DSServerType serverType;
     private String dbName;
@@ -29,6 +35,7 @@ public class DataSource {
     private transient Map<String, DSField> fieldMap;
 
     private String tableName;
+    private DeletionType deletionType = DeletionType.NOT_AVAILABLE;
 
 //    /**
 //     * https://www.smartclient.com/smartclient-release/isomorphic/system/reference/?id=attr..DataSource.schemaBean
@@ -129,7 +136,15 @@ public class DataSource {
         this.dbName = dbName;
     }
 
-//    public String getSchemaBean() {
+    public DeletionType getDeletionType() {
+        return deletionType;
+    }
+
+    public void setDeletionType(DeletionType deletionType) {
+        this.deletionType = deletionType;
+    }
+
+    //    public String getSchemaBean() {
 //        return schemaBean;
 //    }
 //

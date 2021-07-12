@@ -85,6 +85,15 @@ public abstract class AbstractJDBCHandlerTest<H extends JDBCHandler> extends Abs
                 ]
                 """;
 
+        public static String Deleted = """
+                 [
+                    {
+                        name: "deleted",
+                        type: "boolean"
+                    }
+                ]
+                """;
+
         public static String FiredAt = """
                 [
                     {
