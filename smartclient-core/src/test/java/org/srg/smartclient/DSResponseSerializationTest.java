@@ -195,7 +195,7 @@ public class DSResponseSerializationTest {
             final DSResponseDataContainer.RawDataResponse rdr = ENTITY_FIELD_RESPONSE.getData().getRawDataResponse();
             final char sep = ',';
 
-            Serde.serializeResponseAsCSV(w, sep, ENTITY_FIELD_RESPONSE);
+            Serde.serializeResponseAsCSV(w, sep, ENTITY_FIELD_RESPONSE, false);
 
             final String result = bos.toString();
 

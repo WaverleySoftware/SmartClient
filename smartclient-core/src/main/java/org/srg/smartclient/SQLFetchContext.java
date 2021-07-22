@@ -497,7 +497,7 @@ public class SQLFetchContext<H extends JDBCHandler> extends JDBCHandler.Abstract
                     ? defaultQuery : """
                     (
                         %s
-                    ) a
+                    ) opaque
                     """.formatted(operationBinding().getCustomSQL());
 
             this.genericQuery = SQLTemplateEngine.processSQL(templateContext, effectiveQuery);
