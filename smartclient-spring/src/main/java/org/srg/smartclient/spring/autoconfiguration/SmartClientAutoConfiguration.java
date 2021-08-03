@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.Collection;
-import java.util.Optional;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
@@ -58,7 +57,7 @@ public class SmartClientAutoConfiguration {
     @Autowired
     private IDSDispatcher dsDispatcher;
 
-    protected Mono<ServerResponse> processRequest(String request, String fileName, boolean byDatasourceConfig) {
+    protected Mono<ServerResponse> processRequest(String request, String fileName) {
 
         final IDSRequest dsRequest;
         try {
@@ -115,7 +114,7 @@ public class SmartClientAutoConfiguration {
 
                 try(final ByteArrayOutputStream bos = new ByteArrayOutputStream();) {
                     try (final OutputStreamWriter writer = new OutputStreamWriter(bos);) {
-                        Serde.serializeResponseAsCSV(writer, ',', response, byDatasourceConfig);
+                        Serde.serializeResponseAsCSV(writer, ',', response);
                         writer.flush();
                     }
 //                final InputStreamResource resource =  new InputStreamResource(
@@ -149,15 +148,13 @@ public class SmartClientAutoConfiguration {
         //https://www.programcreek.com/java-api-examples/?code=hantsy/spring-reactive-sample/spring-reactive-sample-master/routes/src/main/java/com/example/demo/PostHandler.java
         return RouterFunctions.route(POST(smartClientProperties.getDispatcherPath()), r ->
              r.bodyToMono(String.class)
-                    .flatMap( body -> this.processRequest(body, null, false))
+                    .flatMap( body -> this.processRequest(body, null))
         )
         // export data
         .andRoute(POST(smartClientProperties.getDispatcherPath()+"/{export-file-name}"), r -> {
             final String exportFile = r.pathVariable("export-file-name");
-            final Optional<String> optionalByDatasourceConfig = r.queryParam("by-datasource-config");
-            boolean byDatasourceConfig = Boolean.parseBoolean(optionalByDatasourceConfig.orElse(null));
             return r.bodyToMono(String.class)
-                    .flatMap(body -> this.processRequest(body,exportFile, byDatasourceConfig));
+                    .flatMap(body -> this.processRequest(body,exportFile));
         });
     }
 

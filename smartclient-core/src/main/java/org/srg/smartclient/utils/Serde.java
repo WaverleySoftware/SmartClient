@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.lang.annotation.IncompleteAnnotationException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -45,41 +44,27 @@ public class Serde {
         }
     }
 
-    public static void serializeResponseAsCSV(Writer writer, char separator,  DSResponse response, boolean byDatasourceConfig) throws IOException {
+    public static void serializeResponseAsCSV(Writer writer, char separator,  DSResponse response) throws IOException {
         final DSResponseDataContainer.RawDataResponse rdr = response.getData().getRawDataResponse();
         final ObjectMapper mapper = Serde.createMapper();
 
         // -- write header
         boolean first = true;
-        List<Integer> skipFieldIndexes = new LinkedList<>();
-        int index = 0;
         for (DSField dsf: rdr.getFields()) {
-            if (dsf.isHidden() != null && dsf.isHidden() && byDatasourceConfig) {
-                skipFieldIndexes.add(index);
-                index++;
-                continue;
-            }
             if (!first){
                 writer.append(separator);
             }
             writer.append('"');
-            writer.write((dsf.getTitle() != null && !dsf.getTitle().isBlank() && byDatasourceConfig) ? dsf.getTitle() : dsf.getName());
+            writer.write(dsf.getName());
             writer.append('"');
             first = false;
-            index++;
         }
         writer.write("\n");
 
         // -- write data
         for (Object[] r :rdr.getData()){
             first = true;
-            index = 0;
             for (Object v: r) {
-                if (skipFieldIndexes.contains(index)) {
-                    index++;
-                    continue;
-                }
-                index++;
                 if (!first){
                     writer.write(separator);
                 }
