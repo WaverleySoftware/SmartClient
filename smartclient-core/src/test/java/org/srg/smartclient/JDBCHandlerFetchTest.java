@@ -5,6 +5,7 @@ import org.srg.smartclient.isomorphic.DSRequest;
 import org.srg.smartclient.isomorphic.DSResponse;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,47 @@ public class JDBCHandlerFetchTest extends AbstractJDBCHandlerTest<JDBCHandler> {
     @Test
     public void fetchAll() throws Exception {
         DSRequest request = new DSRequest();
+        final DSResponse response = handler.handleFetch(request);
+
+        JsonTestSupport.assertJsonEquals("""
+                 {
+                     status: 0,
+                     startRow: 0,
+                     endRow: 6,
+                     totalRows: 6,
+                     data:[
+                         {
+                             id:1,
+                             name: 'admin'
+                         },
+                         {
+                             id:2,
+                             name: 'developer'
+                         },
+                         {
+                             id:3,
+                             name: 'UseR3'
+                         },
+                         {
+                             id:4,
+                             name: 'manager1'
+                         },
+                         {
+                             id:5,
+                             name: 'manager2'
+                         },
+                         {
+                             id:6,
+                             name: 'user2'
+                         }
+                     ]
+                }""", response);
+    }
+
+    @Test
+    public void fetchAllWithEmptySortBy() throws Exception {
+        DSRequest request = new DSRequest();
+        request.setSortBy(new LinkedList<>());
         final DSResponse response = handler.handleFetch(request);
 
         JsonTestSupport.assertJsonEquals("""
