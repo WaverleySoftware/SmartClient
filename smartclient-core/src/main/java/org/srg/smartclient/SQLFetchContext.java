@@ -185,7 +185,7 @@ public class SQLFetchContext<H extends JDBCHandler> extends JDBCHandler.Abstract
                 request().getEndRow(), request().getStartRow());
 
         // -- fetch data
-        this.orderClause = request().getSortBy() == null ? "" :  " ORDER BY \n" +
+        this.orderClause = request().getSortBy() == null || request().getSortBy().isEmpty() ? "" :  " ORDER BY \n" +
                 request().getSortBy().stream()
                         .map(s -> {
                             String order = "";
@@ -497,7 +497,7 @@ public class SQLFetchContext<H extends JDBCHandler> extends JDBCHandler.Abstract
                     ? defaultQuery : """
                     (
                         %s
-                    ) a
+                    ) opaque
                     """.formatted(operationBinding().getCustomSQL());
 
             this.genericQuery = SQLTemplateEngine.processSQL(templateContext, effectiveQuery);
