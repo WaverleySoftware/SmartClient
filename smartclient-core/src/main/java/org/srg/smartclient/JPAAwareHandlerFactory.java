@@ -307,7 +307,7 @@ public class JPAAwareHandlerFactory extends JDBCHandlerFactory {
                 f.setHidden( f.isPrimaryKey());
             }
 
-            if (f.isPrimaryKey()) {
+            if (f.isPrimaryKey() && entityType.hasSingleIdAttribute()) {
                 f.setCanEdit(false);
                 f.setRequired(true);
             } else {

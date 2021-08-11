@@ -206,14 +206,14 @@ public class AutomaticDSHandlerRegistrar implements Ordered, SmartLifecycle, App
             }
         }
 
-        // -- sort in accordance to thre provided order, if any
+        // -- sort in accordance to the provided order, if any
         entitiesFound.sort( (e1,e2) -> {
             final SmartClientHandler sch1 = (SmartClientHandler) e1.getAnnotation(SmartClientHandler.class);
             final SmartClientHandler sch2 = (SmartClientHandler) e2.getAnnotation(SmartClientHandler.class);
             int o1 = sch1 != null ? sch1.loadOrder() : 0;
             int o2 = sch2 != null ? sch2.loadOrder() : 0;
 
-            return Integer.compare(02, 01);
+            return Integer.compare(o1, o2);
         });
 
         final String msg = "\nSmartClient JPA handler scan was completed, %d persistable entities were found, %d will be skipped:\n"

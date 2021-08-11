@@ -247,13 +247,9 @@ abstract class DSDeclarationBuilder {
         ctx.write_if(f.getIncludeSummaryFunction() != null, "\t\t\t,includeSummaryFunction:\"%s\"\n", f.getIncludeSummaryFunction());
 
         ctx.write_if(f.isPrimaryKey(),
-                "\t\t\t,primaryKey:true\n"
-                + "\t\t\t,canEdit:false\n");
+                "\t\t\t,primaryKey:true\n");
 
-        ctx.write_if(!f.isPrimaryKey(),
-                "\t\t\t,canEdit:%b\n",
-                f.isCanEdit()
-        );
+        ctx.write("\t\t\t,canEdit:%b\n", f.isCanEdit());
 
         ctx.write_if(Boolean.TRUE.equals(f.isHidden()),
                 "\t\t\t,hidden:%b\n",
